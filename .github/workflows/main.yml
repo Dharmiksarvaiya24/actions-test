@@ -1,7 +1,7 @@
 name: pull-req trigger
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened]
 
 permissions:
   pull-requests: write
@@ -19,11 +19,22 @@ jobs:
       - name: request
         id: call_api
         run: |
+          # Get PR body (fallback to empty string if null)
+          PR_BODY="${{ github.event.pull_request.body || '' }}"
+
+          # Build payload WITHOUT a model field — only top-level messages.
+          # jq is available on ubuntu-latest and safely escapes content for JSON.
+          PAYLOAD=$(jq -n --arg content "$PR_BODY" '{ messages: [ { role: "user", content: $content } ] }')
+
+          # Debug (optional): print payload to runner logs (comment out in prod)
+          echo "Payload: $PAYLOAD" >&2
+
           RESPONSE=$(curl -s -X POST "$API_URL" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $API_KEY" \
-            -d "{\"input\": {\"text\": \"${{ github.event.pull_request.body }}\"}}")
+            -d "$PAYLOAD")
 
+          # Save the API response to env so the comment step can use it
           echo "API_RESPONSE<<EOF" >> $GITHUB_ENV
           echo "$RESPONSE" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
