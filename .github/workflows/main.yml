@@ -19,7 +19,7 @@ jobs:
       - name: Checkout PR code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: API Request
         id: send_request
