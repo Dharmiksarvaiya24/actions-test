@@ -16,33 +16,28 @@ jobs:
       API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
 
     steps:
-      - name: request
-        id: call_api
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: API Request
+        id: send_request
         run: |
-          # Get PR body (fallback to empty string if null)
-          PR_BODY="${{ github.event.pull_request.body || '' }}"
-
-          # Build payload WITHOUT a model field — only top-level messages.
-          # jq is available on ubuntu-latest and safely escapes content for JSON.
-          PAYLOAD=$(jq -n --arg content "$PR_BODY" '{ messages: [ { role: "user", content: $content } ] }')
-
-          # Debug (optional): print payload to runner logs (comment out in prod)
-          echo "Payload: $PAYLOAD" >&2
-
+          DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}..HEAD)
           RESPONSE=$(curl -s -X POST "$API_URL" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $API_KEY" \
-            -d "$PAYLOAD")
+            -d "{\"pr_number\": \"${{ github.event.pull_request.number }}\", \"diff\": \"$DIFF\"}")
+          echo "response=$RESPONSE" >> $GITHUB_OUTPUT
 
-          # Save the API response to env so the comment step can use it
-          echo "API_RESPONSE<<EOF" >> $GITHUB_ENV
-          echo "$RESPONSE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: response
-        uses: peter-evans/create-or-update-comment@v4
+      - name: API Response
+        uses: actions/github-script@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ${{ env.API_RESPONSE }}
+          script: |
+            github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body: `${{ steps.send_request.outputs.response }}`
+            });
