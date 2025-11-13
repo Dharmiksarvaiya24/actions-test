@@ -34,10 +34,15 @@ jobs:
 
       - name: Send diff to API
         run: |
+          SAFE_DIFF="${DIFF//$'\n'/\\n}"
           curl -X POST "$API_URL" \
-            -H "Authorization: Bearer $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "{\"diff\": \"${DIFF//$'\n'/\\n}\"}"
+           -H "Authorization: Bearer $API_KEY" \
+           -H "Content-Type: application/json" \
+           -d "{
+            \"messages\": [
+              { \"role\": \"user\", \"content\": \"Here is the diff:\\n$SAFE_DIFF\" }
+            ]
+          }"
 
           echo "Request completed."     
            
