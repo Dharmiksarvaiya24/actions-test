@@ -16,9 +16,6 @@ jobs:
       API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
 
     steps:
-      - name: Checkout PR code
-        uses: actions/checkout@v4
-
       - name: API Request
         id: send_request
         run: |
