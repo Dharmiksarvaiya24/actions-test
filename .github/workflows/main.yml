@@ -15,6 +15,7 @@ jobs:
       API_URL: ${{ secrets.API_URL || vars.API_URL }}
       API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
     steps:
+    
       - name: Checkout current branch
         uses: actions/checkout@v3
         with:
@@ -25,11 +26,18 @@ jobs:
           git fetch origin main
           echo "Current branch: $(git branch --show-current)"
           echo "Main branch SHA: $(git rev-parse origin/main)"
-      
+          
       - name: Compare files
         run: |
-          # Show differences between current branch and main
-          git diff origin/main HEAD
-          
-          # List files changed
-          git diff --name-only origin/main HEAD
+           DIFF=$(git diff --name-only origin/main HEAD)
+           echo "DIFF=$DIFF" >> $GITHUB_ENV
+
+      - name: Send diff to API
+        run: |
+          curl -X POST "$API_URL" \
+            -H "Authorization: Bearer $API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"diff\": \"${DIFF//$'\n'/\\n}\"}"
+
+          echo "Request completed."     
+           
