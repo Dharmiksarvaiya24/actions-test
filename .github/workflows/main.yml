@@ -14,58 +14,22 @@ jobs:
     env:
       API_URL: ${{ secrets.API_URL || vars.API_URL }}
       API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
-    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout current branch
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 0  
       
-      - name: Send API request
-        id: api
+      - name: Fetch main branch
         run: |
-          # Fetch base branch
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-          
-          # Generate diff
-          DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}...HEAD)
-          
-          # Create JSON payload with proper escaping
-          PAYLOAD=$(jq -n \
-            --arg diff "$DIFF" \
-            --arg pr "${{ github.event.pull_request.number }}" \
-            '{prompt: $diff, pr_number: $pr}')
-          
-          # Send API request
-          RESPONSE=$(curl -s -X POST "$API_URL" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $API_KEY" \
-            -d "$PAYLOAD")
-          
-          # Save response to output using EOF delimiter
-          {
-            echo 'response<<EOF'
-            echo "$RESPONSE"
-            echo 'EOF'
-          } >> $GITHUB_OUTPUT
+          git fetch origin main
+          echo "Current branch: $(git branch --show-current)"
+          echo "Main branch SHA: $(git rev-parse origin/main)"
       
-      - name: Post comment
-        uses: actions/github-script@v7
-        env:
-          API_RESPONSE: ${{ steps.api.outputs.response }}
-        with:
-          script: |
-            let responseText;
-            try {
-              const parsed = JSON.parse(process.env.API_RESPONSE);
-              responseText = parsed.result || parsed.message || parsed.response || JSON.stringify(parsed, null, 2);
-            } catch {
-              responseText = process.env.API_RESPONSE;
-            }
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: responseText
-            });
+      - name: Compare files
+        run: |
+          # Show differences between current branch and main
+          git diff origin/main HEAD
+          
+          # List files changed
+          git diff --name-only origin/main HEAD
