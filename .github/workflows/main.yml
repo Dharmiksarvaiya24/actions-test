@@ -24,31 +24,30 @@ jobs:
       - name: Fetch main branch
         run: |
           git fetch origin main
-          echo "Current branch: $(git branch --show-current)"
-          echo "Main branch SHA: $(git rev-parse origin/main)"
           
-      - name: Compare files
+      - name: Fetch main and compute diff
+        shell: bash
         run: |
-           DIFF=$(git diff --name-only origin/main HEAD)
-           echo "DIFF=$DIFF" >> $GITHUB_ENV
-            echo "DIFF<<EOF" >> $GITHUB_ENV
-            echo "$DIFF" >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
+          git fetch origin main --depth=1 || true
+          DIFF=$(git diff --name-only origin/main HEAD || true)
 
-      - name: Send diff to API
+          echo "DIFF<<EOF" >> $GITHUB_ENV
+          printf '%s\n' "$DIFF" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Send to API (URL-encoded)
+        shell: bash
         run: |
-          SAFE_DIFF="${DIFF//$'\n'/\\n}"
+          if [[ -z "${DIFF// }" ]]; then
+            echo "No diff found — skipping API call."
+            exit 0
+          fi
+
           curl -X POST "$API_URL" \
-           -H "Authorization: Bearer $API_KEY" \
-           -H "Content-Type: application/json" \
-            -d "{
-            \"messages\": [
-              {
-                \"role\": \"user\",
-                \"content\": \"This data represents the main branch and the current branch—Compare it and tell what is difference in it:\\n$SAFE_DIFF\"
-              }
-            ]
-          }"
-
-          echo "Request completed."     
+            -H "Authorization: Bearer $API_KEY" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "diff=$DIFF"
+          
+      
+          
            
