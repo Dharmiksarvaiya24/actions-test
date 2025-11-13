@@ -35,20 +35,27 @@ jobs:
           printf '%s\n' "$DIFF" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Send to API (URL-encoded)
+      - name: Send to API (correct JSON + simple response)
         shell: bash
         run: |
-          if [[ -z "${DIFF// }" ]]; then
-            echo "No diff found — skipping API call."
-            exit 0
-          fi
+            JSON=$(cat <<EOF
+            {
+              "messages": [
+            {
+              "role": "user",
+              "content": "Review this :\n$DIFF"
+            }
+            ]
+            }
+              EOF
+            )
 
-          curl -X POST "$API_URL" \
+            RESPONSE=$(curl -s -X POST "$API_URL" \
             -H "Authorization: Bearer $API_KEY" \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            --data-urlencode "diff=$DIFF"
-            
-             echo "API Response: $RESPONSE"
+            -H "Content-Type: application/json" \
+            -d "$JSON")
+
+            echo "API Response: $RESPONSE"
           
       
           
