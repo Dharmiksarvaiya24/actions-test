@@ -16,9 +16,15 @@ jobs:
       API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
 
     steps:
-      - name: API Request
-        id: send_request
-        run: |
+    - name: Checkout another repo
+      uses: actions/checkout@v4
+      with:
+        repository: owner/repo-name
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: API Request
+      id: send_request
+      run: |
           DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}..HEAD)
           RESPONSE=$(curl -s -X POST "$API_URL" \
             -H "Content-Type: application/json" \
