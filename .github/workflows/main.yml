@@ -27,7 +27,7 @@ jobs:
           git fetch origin ${{ github.event.pull_request.base.ref }}
           DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}...HEAD)
           
-          PAYLOAD=$(jq -n --arg diff "$DIFF" --arg pr "${{ github.event.pull_request.number }}" '{pr_number: $pr, diff: $diff}')
+          PAYLOAD=$(jq -n --arg diff "$DIFF" --arg pr "${{ github.event.pull_request.number }}" '{prompt: "Analyze this PR diff: \($diff)", pr_number: $pr}')
           
           RESPONSE=$(curl -s -X POST "$API_URL" \
             -H "Content-Type: application/json" \
