@@ -15,48 +15,45 @@ jobs:
       API_URL: ${{ secrets.API_URL || vars.API_URL }}
       API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
     steps:
+
+    - name: Checkout current branch
+      uses: actions/checkout@v3
+      with:
+          fetch-depth: 0
+          
+    - name: Fetch main branch
+      run: |
+       git fetch origin main
+
+    - name: Compute diff and save to file
+      shell: bash
+      run: |
+        git fetch origin main --depth=1 || true
+        git diff origin/main HEAD > diff_output.txt || true
+        echo "Diff file created"
+
+    - name: Send diff to API
+      shell: bash
+      run: |
+        DIFF_CONTENT=$(cat diff_output.txt)
+        JSON=$(jq -n --arg diff "$DIFF_CONTENT" \
+        '{
+          "messages": [
+         {
+            "role": "user",
+            "content": ("Review this code changes:\n" + $diff)
+          }
+        ]
+        }')
     
-      - name: Checkout current branch
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  
-      
-      - name: Fetch main branch
-        run: |
-          git fetch origin main
-          
-      - name: Fetch main and compute diff
-        shell: bash
-        run: |
-          git fetch origin main --depth=1 || true
-          DIFF=$(git diff --name-only origin/main HEAD || true)
+        RESPONSE=$(curl -s -X POST "$API_URL" \
+        -H "Authorization: Bearer $API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "$JSON")
+    
+        echo "API Response: $RESPONSE" 
 
-          echo "DIFF<<EOF" >> $GITHUB_ENV
-          printf '%s\n' "$DIFF" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
 
-      - name: Send to API (correct JSON + simple response)
-        shell: bash
-        run: |
-            JSON=$(cat <<EOF
-            {
-              "messages": [
-            {
-              "role": "user",
-              "content": "Review this :\n$DIFF"
-            }
-            ]
-            }
-              EOF
-            )
-
-            RESPONSE=$(curl -s -X POST "$API_URL" \
-            -H "Authorization: Bearer $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$JSON")
-
-            echo "API Response: $RESPONSE"
-          
-      
-          
-           
+    
+    
+    
