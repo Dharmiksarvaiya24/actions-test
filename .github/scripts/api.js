@@ -1,79 +1,101 @@
-
 const fs = require('fs');
-const path = require('path');
 
-function parseToon(text) {
-  const lines = text.split('\n');
+console.log('Starting API script...');
+console.log('Current directory:', process.cwd());
+console.log('Files in directory:', fs.readdirSync('.'));
+
+const toonContent = fs.readFileSync('./diff.toon', 'utf8');
+console.log('Toon file read successfully');
+
+function parseToon(content) {
+  const lines = content.split('\n');
   const data = { baseBranch: '', currentBranch: '', diff: '' };
   let inDiff = false;
-  const diffLines = [];
-
-  for (let raw of lines) {
-    const line = raw.replace(/\r$/, ''); // drop CR if any
-    const trimmed = line.trimStart();
-
-    if (!inDiff && trimmed.startsWith('baseBranch:')) {
-      data.baseBranch = trimmed.slice('baseBranch:'.length).trim();
-      continue;
-    }
-    if (!inDiff && trimmed.startsWith('currentBranch:')) {
-      data.currentBranch = trimmed.slice('currentBranch:'.length).trim();
-      continue;
-    }
-    if (!inDiff && trimmed.startsWith('diff:')) {
+  let diffLines = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith('baseBranch:')) {
+      data.baseBranch = line.replace('baseBranch:', '').trim();
+    } else if (line.startsWith('currentBranch:')) {
+      data.currentBranch = line.replace('currentBranch:', '').trim();
+    } else if (line.startsWith('diff:')) {
       inDiff = true;
       continue;
     }
     if (inDiff) {
-      // remove the 4-space prefix we added in workflow, if present
-      diffLines.push(line.replace(/^\s{4}/, ''));
+      diffLines.push(line);
     }
   }
-
+  
   data.diff = diffLines.join('\n').trim();
   return data;
 }
 
-async function main() {
-  const toonPath = path.join(process.cwd(), 'diff.toon');
-  if (!fs.existsSync(toonPath)) {
-    fs.writeFileSync('api_response.txt', JSON.stringify({ error: 'diff.toon not found' }, null, 2));
-    process.exit(1);
-  }
+const diffData = parseToon(toonContent);
 
-  const raw = fs.readFileSync(toonPath, 'utf8');
-  const parsed = parseToon(raw);
-
-  const payload = {
-    messages: [{ role: 'user', content: `Review this:\n${parsed.diff}` }],
-    meta: { baseBranch: parsed.baseBranch, currentBranch: parsed.currentBranch }
-  };
-
-  // If no API_URL provided, write payload to api_response.txt and exit OK
-  if (!process.env.API_URL) {
-    fs.writeFileSync('api_response.txt', JSON.stringify({ simulated: true, payload }, null, 2));
+async function sendToAPI() {
+  const apiUrl = process.env.API_URL;
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiUrl || !apiKey) {
+    console.log('No API credentials, using dummy response');
+    const dummyResponse = `## Code Review\n\nAPI credentials not configured. Using dummy review.\n\n- Code structure looks good\n- Consider adding tests\n- Documentation could be improved`;
+    fs.writeFileSync('api_response.txt', dummyResponse);
+    console.log('Dummy response written');
     return;
   }
-
+  
   try {
-    const res = await fetch(process.env.API_URL, {
+    const payload = {
+      messages: [
+        {
+          role: "user",
+          content: `Review this:\n${diffData.diff}`
+        }
+      ]
+    };
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.API_KEY || ''}`
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
     });
-
-    const text = await res.text();
-    let result;
-    try { result = JSON.parse(text); } catch { result = { text }; }
-
-    fs.writeFileSync('api_response.txt', JSON.stringify({ status: res.status, result }, null, 2));
-  } catch (err) {
-    fs.writeFileSync('api_response.txt', JSON.stringify({ error: String(err) }, null, 2));
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    // Extract text from Claude API response
+    let responseText = '';
+    if (result.content && result.content[0] && result.content[0].text) {
+      responseText = result.content[0].text;
+    } else if (typeof result === 'string') {
+      responseText = result;
+    } else {
+      responseText = JSON.stringify(result, null, 2);
+    }
+    
+    fs.writeFileSync('api_response.txt', responseText);
+  } catch (error) {
+    fs.writeFileSync('api_response.txt', `Error: ${error.message}`);
     process.exit(1);
   }
 }
 
-main();
+sendToAPI().catch(error => {
+  console.error('Script failed:', error.message);
+  fs.writeFileSync('api_response.txt', `Error: ${error.message}`);
+  process.exit(1);
+});
+
+
+
+
+
+
