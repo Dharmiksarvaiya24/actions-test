@@ -39,7 +39,7 @@ jobs:
           path: diff.toon
           
     - name: Run JS processor
-      run: node .github/scripts/api.js
+      run: node .github/workflows/scripts/api.js
     
     
     
