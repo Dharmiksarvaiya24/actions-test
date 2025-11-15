@@ -21,39 +21,25 @@ jobs:
       with:
           fetch-depth: 0
           
-    - name: Fetch main branch
+    - name: Create diff.toon file
       run: |
-       git fetch origin main
+       git fetch origin ${{ github.base_ref }} ${{ github.head_ref }}
+       DIFF=$(git diff origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | sed 's/^/    /')
+       cat > diff.toon <<TOON
+       baseBranch: ${{ github.base_ref }}
+       currentBranch: ${{ github.head_ref }}
+       diff:
+       $DIFF
+       TOON
 
-    - name: Compute diff and save to file
-      shell: bash
-      run: |
-        git fetch origin main --depth=1 || true
-        git diff origin/main HEAD > diff_output.txt || true
-        echo "Diff file created"
-
-    - name: Send diff to API
-      shell: bash
-      run: |
-        DIFF_CONTENT=$(cat diff_output.txt)
-        JSON=$(jq -n --arg diff "$DIFF_CONTENT" \
-        '{
-          "messages": [
-         {
-            "role": "user",
-            "content": ("Review this code changes:\n" + $diff)
-          }
-        ]
-        }')
-    
-        RESPONSE=$(curl -s -X POST "$API_URL" \
-        -H "Authorization: Bearer $API_KEY" \
-        -H "Content-Type: application/json" \
-        -d "$JSON")
-    
-        echo "API Response: $RESPONSE" 
-
-
+    - name: Upload diff.toon
+      uses: actions/upload-artifact@v4
+      with:
+          name: diff-toon
+          path: diff.toon
+          
+    - name: Run JS processor
+      run: node .github/scripts/api.js
     
     
     
