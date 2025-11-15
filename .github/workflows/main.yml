@@ -16,44 +16,47 @@ jobs:
       API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
     steps:
 
-    - name: Checkout current branch
-      uses: actions/checkout@v3
-      with:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
           fetch-depth: 0
-          
-    - name: Create diff.toon file
-      run: |
-       git fetch origin ${{ github.base_ref }} ${{ github.head_ref }}
-       DIFF=$(git diff origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | sed 's/^/    /')
-       cat > diff.toon <<TOON
-       baseBranch: ${{ github.base_ref }}
-       currentBranch: ${{ github.head_ref }}
-       diff:
-       $DIFF
-       TOON
 
-    - name: Upload diff.toon
-      uses: actions/upload-artifact@v4
-      with:
-          name: diff-toon
-          path: diff.toon
-          
-    - name: Run JS processor
-      run: node .github/workflows/scripts/api.js
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
 
-    - name: Update PR description
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const response = fs.readFileSync('api_response.txt', 'utf8');
-          
-          github.rest.pulls.update({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: context.issue.number,
-            body: response
-          });
-    
-    
-    
+      - name: Create diff.toon
+        run: |
+          git fetch origin ${{ github.base_ref }} ${{ github.head_ref }}
+          DIFF=$(git diff origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | sed 's/^/    /')
+          cat > diff.toon <<'TOON'
+          baseBranch: ${{ github.base_ref }}
+          currentBranch: ${{ github.head_ref }}
+          diff:
+          $DIFF
+          TOON
+
+      - name: Run JS processor
+        run: node .github/workflows/scripts/api.js
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-artifacts
+          path: |
+            diff.toon
+            api_response.txt
+
+      - name: Update PR description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.existsSync('api_response.txt') ? fs.readFileSync('api_response.txt','utf8') : '';
+            github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body
+            });
