@@ -40,7 +40,7 @@ jobs:
           TOON
 
       - name: Run JS processor
-        run: node .github/workflows/scripts/api.js
+        run: node .github/scripts/api.js
 
 
       - name: Update PR description
