@@ -1,55 +1,26 @@
-name: pull-req trigger
+name: Pull-Req-Trigger
 
 on:
   pull_request:
-    types: [opened, reopened]
+    branches: [main]
 
 permissions:
   pull-requests: write
   contents: read
 
 jobs:
-  pr-comment:
-    runs-on: ubuntu-latest
-    env:
-      API_URL: ${{ secrets.API_URL || vars.API_URL }}
-      API_KEY: ${{ secrets.API_KEY || vars.API_KEY }}
-
-    steps:
-
-    - uses: actions/checkout@v4
-      with:
-          fetch-depth: 0
-          
-    - run: git fetch origin main && git fetch origin ${{ github.head_ref || github.ref_name }} && git diff origin/main..origin/${{ github.head_ref || github.ref_name }} > diff.patch
-
-    - uses: actions/setup-node@v4
-      with:
-          node-version: '18'
-
-    - run: node .github/scripts/api.js
-
-  name: Generate Diff
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
   diff:
     runs-on: ubuntu-latest
     env:
       API_URL: ${{ secrets.API_URL }}
-      API_TOKEN: ${{ secrets.API_TOKEN }}
+      API_TOKEN: ${{ secrets.API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - run: git fetch origin main && git fetch origin ${{ github.head_ref || github.ref_name }} && git diff origin/main..origin/${{ github.head_ref || github.ref_name }} > changes.patch
+      - run: git fetch origin main && git fetch origin ${{ github.head_ref }} && git diff origin/main..origin/${{ github.head_ref }} > diff.patch
 
       - uses: actions/setup-node@v4
         with:
@@ -58,7 +29,6 @@ jobs:
       - run: node .github/scripts/api.js
 
       - name: Post review to PR
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
