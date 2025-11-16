@@ -12,7 +12,7 @@ const options = {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.API_TOKEN}`
+    'Authorization': `Bearer ${process.env.API_KEY}`
   }
 };
 
