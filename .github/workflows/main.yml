@@ -1,33 +1,25 @@
 name: Pull-Req-Trigger
-
 on:
   pull_request:
     branches: [main]
-
 permissions:
   pull-requests: write
   contents: read
-
 jobs:
   diff:
     runs-on: ubuntu-latest
     env:
       API_URL: ${{ secrets.API_URL }}
-      API_TOKEN: ${{ secrets.API_KEY }}
-
+      API_KEY: ${{ secrets.API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - run: git fetch origin main && git fetch origin ${{ github.head_ref }} && git diff origin/main..origin/${{ github.head_ref }} > diff.patch
-
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-
       - run: node .github/scripts/api.js
-
       - name: Post review to PR
         uses: actions/github-script@v7
         with:
@@ -39,4 +31,4 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: review
-            });
+            })
