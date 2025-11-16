@@ -35,7 +35,10 @@ const req = https.request(process.env.API_URL, options, (res) => {
         return;
       }
       
-      const review = typeof result.result === 'string' ? result.result : JSON.stringify(result.result, null, 2);
+      let review = result.result;
+      if (typeof review === 'object') {
+        review = review.text || review.content || JSON.stringify(review);
+      }
       console.log('Review content:', review);
       
       fs.writeFileSync('pr-review.txt', review);
