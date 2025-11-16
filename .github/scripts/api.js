@@ -4,7 +4,7 @@ const https = require('https');
 const diff = fs.readFileSync('diff.patch', 'utf8');
 
 const data = JSON.stringify({
-  prompt: diff
+  prompt: `Review this PR for correctness, code quality, performance, security, and potential issues, then provide approval : \n \n${diff}`
 });
 
 const options = {
