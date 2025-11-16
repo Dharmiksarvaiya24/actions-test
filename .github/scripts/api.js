@@ -17,8 +17,19 @@ const options = {
 
 const req = https.request(process.env.API_URL, options, (res) => {
   console.log('Status:', res.statusCode);
+  let response = '';
+  
   res.on('data', (chunk) => {
-    console.log('Response:', chunk.toString());
+    response += chunk.toString();
+  });
+  
+  res.on('end', () => {
+    console.log('Response:', response);
+    const result = JSON.parse(response);
+    const review = result.result;
+    
+    fs.writeFileSync('pr-review.txt', review);
+    console.log('Review saved to pr-review.txt');
   });
 });
 
