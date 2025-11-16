@@ -17,28 +17,14 @@ jobs:
 
     steps:
 
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
+    - uses: actions/checkout@v4
+      with:
           fetch-depth: 0
+          
+    - run: git fetch origin main && git fetch origin ${{ github.head_ref || github.ref_name }} && git diff origin/main..origin/${{ github.head_ref || github.ref_name }} > changes.patch
 
-      - run: |
-          git fetch origin main
-          git fetch origin ${{ github.head_ref || github.ref_name }}
-          git diff origin/main..origin/${{ github.head_ref || github.ref_name }} > diff.patch
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: diff-patch
-          path: diff.patch
-
-      - uses: actions/setup-node@v3
-        with:
+    - uses: actions/setup-node@v4
+      with:
           node-version: '18'
 
-      - run: node process-diff.js
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: diff-patch
-          path: diff.patch
+    - run: node .github/scripts/api.js
