@@ -35,9 +35,9 @@ const req = https.request(process.env.API_URL, options, (res) => {
         return;
       }
       
-      let review = result.result;
+      let review = result.response || result.result;
       if (typeof review === 'object') {
-        review = review.text || review.content || JSON.stringify(review);
+        review = review.text || review.content || review.response || JSON.stringify(review);
       }
       console.log('Review content:', review);
       
