@@ -21,7 +21,7 @@ jobs:
       with:
           fetch-depth: 0
           
-    - run: git fetch origin main && git fetch origin ${{ github.head_ref || github.ref_name }} && git diff origin/main..origin/${{ github.head_ref || github.ref_name }} > changes.patch
+    - run: git fetch origin main && git fetch origin ${{ github.head_ref || github.ref_name }} && git diff origin/main..origin/${{ github.head_ref || github.ref_name }} > diff.patch
 
     - uses: actions/setup-node@v4
       with:
