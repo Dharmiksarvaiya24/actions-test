@@ -24,12 +24,26 @@ const req = https.request(process.env.API_URL, options, (res) => {
   });
   
   res.on('end', () => {
-    console.log('Response:', response);
-    const result = JSON.parse(response);
-    const review = typeof result.result === 'string' ? result.result : JSON.stringify(result.result, null, 2);
-    
-    fs.writeFileSync('pr-review.txt', review);
-    console.log('Review saved to pr-review.txt');
+    console.log('Full Response:', response);
+    try {
+      const result = JSON.parse(response);
+      console.log('Parsed result:', result);
+      
+      if (!result.result) {
+        console.log('ERROR: result.result is empty');
+        fs.writeFileSync('pr-review.txt', 'No review generated');
+        return;
+      }
+      
+      const review = typeof result.result === 'string' ? result.result : JSON.stringify(result.result, null, 2);
+      console.log('Review content:', review);
+      
+      fs.writeFileSync('pr-review.txt', review);
+      console.log('Review saved successfully');
+    } catch (err) {
+      console.error('Error parsing response:', err);
+      fs.writeFileSync('pr-review.txt', `Error: ${err.message}`);
+    }
   });
 });
 
