@@ -26,7 +26,7 @@ const req = https.request(process.env.API_URL, options, (res) => {
   res.on('end', () => {
     console.log('Response:', response);
     const result = JSON.parse(response);
-    const review = result.result;
+    const review = typeof result.result === 'string' ? result.result : JSON.stringify(result.result, null, 2);
     
     fs.writeFileSync('pr-review.txt', review);
     console.log('Review saved to pr-review.txt');
