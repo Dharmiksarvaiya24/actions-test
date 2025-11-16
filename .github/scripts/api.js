@@ -1,18 +1,17 @@
 const fs = require('fs');
 const https = require('https');
 
-const diff = fs.readFileSync('diff.patch', 'utf8');
+const diff = fs.readFileSync('changes.patch', 'utf8');
 
 const data = JSON.stringify({
-  patch: diff,
-  timestamp: new Date().toISOString()
+  prompt: diff
 });
 
 const options = {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.API_KEY}`
+    'Authorization': `Bearer ${process.env.API_TOKEN}`
   }
 };
 
@@ -25,4 +24,3 @@ const req = https.request(process.env.API_URL, options, (res) => {
 
 req.write(data);
 req.end();
-
