@@ -1,7 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 
-const diff = fs.readFileSync('changes.patch', 'utf8');
+const diff = fs.readFileSync('diff.patch', 'utf8');
 
 const data = JSON.stringify({
   prompt: diff
