@@ -1,16 +1,28 @@
 const fs = require('fs');
+const https = require('https');
 
-const patchContent = fs.readFileSync('diff.patch', 'utf8');
+const diff = fs.readFileSync('diff.patch', 'utf8');
 
-console.log('Patch file content:');
-console.log(patchContent);
+const data = JSON.stringify({
+  patch: diff,
+  timestamp: new Date().toISOString()
+});
 
-const data = {
-  patch: patchContent,
-  timestamp: new Date().toISOString(),
-  size: Buffer.byteLength(patchContent, 'utf8')
+const options = {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.API_TOKEN}`
+  }
 };
 
-fs.writeFileSync('diff-output.json', JSON.stringify(data, null, 2));
+const req = https.request(process.env.API_URL, options, (res) => {
+  console.log('Status:', res.statusCode);
+  res.on('data', (chunk) => {
+    console.log('Response:', chunk.toString());
+  });
+});
 
-console.log('Diff processed and saved to diff-output.json');
+req.write(data);
+req.end();
+
