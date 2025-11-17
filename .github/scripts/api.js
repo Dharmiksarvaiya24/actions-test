@@ -4,7 +4,7 @@ const https = require('https');
 const diff = fs.readFileSync('diff.patch', 'utf8');
 
 const data = JSON.stringify({
-  prompt: `Review this GitHub pull request and provide a concise 3–4 line summary covering correctness, code quality, performance, security, and any potential issues. End with a clear approval or rejection. : \n \n${diff}`
+  prompt: `Review this GitHub pull request and provide a summary : \n \n${diff}`
 });
 
 const options = {
