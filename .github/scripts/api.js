@@ -29,24 +29,12 @@ const req = https.request(process.env.API_URL, options, (res) => {
       const result = JSON.parse(response);
       console.log('Parsed result:', result);
       
-      if (!result.result) {
-        console.log('ERROR: result.result is empty');
-        fs.writeFileSync('pr-review.txt', 'No review generated');
-        return;
-      }
-      
       let review = result.response || result.result;
       if (typeof review === 'object') {
         review = review.text || review.content || review.response || JSON.stringify(review);
       }
-      console.log('Review content:', review);
-      
       fs.writeFileSync('pr-review.txt', review);
-      console.log('Review saved successfully');
-    } catch (err) {
-      console.error('Error parsing response:', err);
-      fs.writeFileSync('pr-review.txt', `Error: ${err.message}`);
-    }
+    } 
   });
 });
 
