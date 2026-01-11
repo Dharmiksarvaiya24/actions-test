@@ -2,7 +2,6 @@ const fs = require('fs');
 const https = require('https');
 
 const diff = fs.readFileSync('diff.patch', 'utf8');
-
 const data = JSON.stringify({
   prompt: `Review this GitHub pull request and provide a summary : \n \n${diff}`
 });
@@ -28,14 +27,22 @@ const req = https.request(process.env.API_URL, options, (res) => {
     try {
       const result = JSON.parse(response);
       console.log('Parsed result:', result);
-      
       let review = result.response || result.result;
+      
       if (typeof review === 'object') {
         review = review.text || review.content || review.response || JSON.stringify(review);
       }
+      
       fs.writeFileSync('pr-review.txt', review);
-    } 
+      console.log('Review saved to pr-review.txt');
+    } catch (error) {
+      console.error('Error parsing response:', error.message);
+    }
   });
+});
+
+req.on('error', (error) => {
+  console.error('Request error:', error.message);
 });
 
 req.write(data);
