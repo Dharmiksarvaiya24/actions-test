@@ -3,11 +3,11 @@
 GitHub Actions repository (workflows + custom actions).
 
 ## What’s inside
-- `.github/workflows/` — CI/CD workflows
+- `.github/Scripts/` — CI/CD scripts
 - `.github/actions/` — local custom actions used by workflows
 
 ## Run / check
-- Go to the **Actions** tab to run workflows (if `workflow_dispatch` is enabled) and view logs.
+- Go to the **Actions** tab to run workflows and view logs.
 - Configure required **Secrets/Variables** in: `Settings → Secrets and variables → Actions`.
 
 ## Use a local action
