@@ -17,7 +17,9 @@ GitHub Actions repository (workflows + custom actions).
 ```
 
 ## Example
-<img width="817" height="519" alt="Screenshot 2026-04-05 at 11 46 35 PM" src="https://github.com/user-attachments/assets/86ba0bf3-6d3e-493f-a6dc-2108e1434c92" />
+<img width="815" height="483" alt="Screenshot 2026-05-18 at 10 55 06 AM" src="https://github.com/user-attachments/assets/a7c02edb-4c04-4606-87af-61f9598323f9" />
+
 
 ## Diagram 
-<img width="711" height="397" alt="Screenshot 2026-05-18 at 10 35 10 AM" src="https://github.com/user-attachments/assets/da41d990-8bca-47a3-b0d0-c6d21aeac036" />
+<img width="711" height="397" alt="Screenshot 2026-05-18 at 10 35 10 AM" src="https://github.com/user-attachments/assets/f051eafe-4c8b-4b3b-a246-057122be30cb" />
+
